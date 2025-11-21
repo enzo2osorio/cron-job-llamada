@@ -1,4 +1,5 @@
 require("dotenv").config();
+const http = require("http");
 const https = require("https");
 
 console.log("🚀 Cron job iniciado");
@@ -13,20 +14,17 @@ if (!url) {
 
 console.log("🌐 URL a pingear:", url);
 
-https
-  .get(url, (res) => {
-    console.log(`✅ Ping exitoso: ${res.statusCode}`);
-    process.exit(0); // <-- importante para que el proceso termine
-  })
-  .on("error", (err) => {
-    console.error("❌ Error en el ping:", err.message);
-    process.exit(1);
-  });
+function ping(url) {
+  const client = url.startsWith("https") ? https : http;
 
-https.get(url_2, (res) => {
-    console.log(`✅ Ping exitoso: ${res.statusCode}`);
-    process.exit(0);
-}) .on("error", (err) => {
-    console.error("❌ Error en el ping:", err.message);
-    process.exit(1);
-  });
+  client
+    .get(url, (res) => {
+      console.log(`✅ Ping exitoso: ${res.statusCode}`);
+    })
+    .on("error", (err) => {
+      console.error("❌ Error en el ping:", err.message);
+    });
+}
+
+ping(url);
+ping(url_2);
