@@ -4,27 +4,36 @@ const https = require("https");
 
 console.log("🚀 Cron job iniciado");
 
-const url = process.env.MI_API_URL;
-const url_2 = process.env.MI_API_URL_2;
-
-if (!url) {
-  console.error("❌ MI_API_URL no está definido");
-  process.exit(1);
-}
-
-console.log("🌐 URL a pingear:", url);
+const urls = [process.env.MI_API_URL, process.env.MI_API_URL_2];
 
 function ping(url) {
-  const client = url.startsWith("https") ? https : http;
+  return new Promise((resolve) => {
+    const client = url.startsWith("https") ? https : http;
 
-  client
-    .get(url, (res) => {
-      console.log(`✅ Ping exitoso: ${res.statusCode}`);
-    })
-    .on("error", (err) => {
-      console.error("❌ Error en el ping:", err.message);
+    const req = client.get(url, (res) => {
+      console.log(`✔ Ping ${url} → ${res.statusCode}`);
+      res.resume(); // <--- IMPORTANTE: consume data y cierra conexión
+      resolve();
     });
+
+    req.on("error", (err) => {
+      console.log(`❌ Error ping ${url}:`, err.message);
+      resolve(); // <-- No bloqueo
+    });
+
+    req.setTimeout(5000, () => {
+      console.log(`⏱ Timeout ping ${url}`);
+      req.destroy();
+      resolve();
+    });
+  });
 }
 
-ping(url);
-ping(url_2);
+async function main() {
+  for (const url of urls) {
+    if (url) await ping(url);
+  }
+  process.exit(0);
+}
+
+main();
